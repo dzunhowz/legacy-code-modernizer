@@ -26,9 +26,7 @@
     {
       "Sid": "SecretsManagerAccess",
       "Effect": "Allow",
-      "Action": [
-        "secretsmanager:GetSecretValue"
-      ],
+      "Action": ["secretsmanager:GetSecretValue"],
       "Resource": "arn:aws:secretsmanager:*:*:secret:legacy-code-modernizer/*"
     },
     {

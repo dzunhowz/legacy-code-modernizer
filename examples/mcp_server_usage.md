@@ -21,6 +21,7 @@ The MCP server exposes tools that can be called by any MCP-compatible client.
 #### Fast Tools (Code Scout)
 
 1. **scan_directory**
+
 ```json
 {
   "name": "scan_directory",
@@ -32,6 +33,7 @@ The MCP server exposes tools that can be called by any MCP-compatible client.
 ```
 
 2. **find_symbol**
+
 ```json
 {
   "name": "find_symbol",
@@ -43,6 +45,7 @@ The MCP server exposes tools that can be called by any MCP-compatible client.
 ```
 
 3. **analyze_impact**
+
 ```json
 {
   "name": "analyze_impact",
@@ -54,6 +57,7 @@ The MCP server exposes tools that can be called by any MCP-compatible client.
 ```
 
 4. **grep_search**
+
 ```json
 {
   "name": "grep_search",
@@ -66,6 +70,7 @@ The MCP server exposes tools that can be called by any MCP-compatible client.
 ```
 
 5. **git_blame**
+
 ```json
 {
   "name": "git_blame",
@@ -78,6 +83,7 @@ The MCP server exposes tools that can be called by any MCP-compatible client.
 ```
 
 6. **build_dependency_graph**
+
 ```json
 {
   "name": "build_dependency_graph",
@@ -90,6 +96,7 @@ The MCP server exposes tools that can be called by any MCP-compatible client.
 #### Slow Tools (Refactoring Crew)
 
 1. **analyze_and_plan**
+
 ```json
 {
   "name": "analyze_and_plan",
@@ -102,6 +109,7 @@ The MCP server exposes tools that can be called by any MCP-compatible client.
 ```
 
 2. **refactor_code**
+
 ```json
 {
   "name": "refactor_code",
@@ -114,6 +122,7 @@ The MCP server exposes tools that can be called by any MCP-compatible client.
 ```
 
 3. **full_refactoring_workflow**
+
 ```json
 {
   "name": "full_refactoring_workflow",
@@ -126,6 +135,7 @@ The MCP server exposes tools that can be called by any MCP-compatible client.
 ```
 
 4. **generate_tests**
+
 ```json
 {
   "name": "generate_tests",
@@ -138,6 +148,7 @@ The MCP server exposes tools that can be called by any MCP-compatible client.
 ```
 
 5. **architectural_review**
+
 ```json
 {
   "name": "architectural_review",
@@ -161,15 +172,15 @@ async def main():
         command="uv",
         args=["run", "python", "-m", "src.mcp_server.server"]
     )
-    
+
     async with stdio_client(server_params) as (read, write):
         async with ClientSession(read, write) as session:
             await session.initialize()
-            
+
             # List available tools
             tools = await session.list_tools()
             print("Available tools:", [t.name for t in tools.tools])
-            
+
             # Call fast tool (Code Scout)
             result = await session.call_tool(
                 "find_symbol",
@@ -179,7 +190,7 @@ async def main():
                 }
             )
             print("Symbol usages:", result)
-            
+
             # Call slow tool (Refactoring Crew)
             result = await session.call_tool(
                 "analyze_and_plan",
@@ -213,12 +224,7 @@ Add to your Claude Desktop configuration (`claude_desktop_config.json`):
   "mcpServers": {
     "legacy-code-modernizer": {
       "command": "uv",
-      "args": [
-        "run",
-        "python",
-        "-m",
-        "src.mcp_server.server"
-      ],
+      "args": ["run", "python", "-m", "src.mcp_server.server"],
       "env": {
         "AWS_REGION": "us-east-1",
         "AWS_ACCESS_KEY_ID": "your-key",

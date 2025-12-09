@@ -31,6 +31,7 @@ A powerful system for modernizing risky legacy functions using AI agents exposed
 ## Features
 
 ### Code Scout (Fast Agent)
+
 - **Symbol Scanning**: AST-based Python code analysis
 - **Impact Analysis**: Understand the blast radius of changes
 - **Dependency Graphing**: Build and visualize dependencies
@@ -39,6 +40,7 @@ A powerful system for modernizing risky legacy functions using AI agents exposed
 - **MCP Wrapper**: `@wrapper.ingest(is_long_running=False)`
 
 ### Refactoring Crew (Slow Agent)
+
 - **Architect Agent**: Analyzes code and creates refactoring plans
 - **Coder Agent**: Implements refactoring plans with clean code
 - **AI-Powered**: Uses AWS Bedrock (Claude 3.5 Sonnet)
@@ -171,6 +173,7 @@ tests = crew.generate_tests(
 The MCP server exposes both agents via standardized tools:
 
 **Fast Tools (Code Scout)**:
+
 - `scan_directory` - Scan and analyze Python files
 - `find_symbol` - Find symbol usages
 - `analyze_impact` - Impact analysis
@@ -179,6 +182,7 @@ The MCP server exposes both agents via standardized tools:
 - `build_dependency_graph` - Dependency analysis
 
 **Slow Tools (Refactoring Crew)**:
+
 - `analyze_and_plan` - Create refactoring plan
 - `refactor_code` - Implement refactoring
 - `full_refactoring_workflow` - Complete workflow
@@ -205,6 +209,7 @@ chmod +x deploy.sh
 ```
 
 The deployment script will:
+
 1. Create ECR repository
 2. Build and push Docker image
 3. Register ECS task definition
@@ -238,17 +243,18 @@ aws ecs update-service \
 
 ### Environment Variables
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `AWS_REGION` | AWS region for Bedrock | `us-east-1` |
-| `AWS_ACCESS_KEY_ID` | AWS access key | - |
-| `AWS_SECRET_ACCESS_KEY` | AWS secret key | - |
-| `BEDROCK_MODEL_ID` | Bedrock model ID | `anthropic.claude-3-5-sonnet-20241022-v2:0` |
-| `LOG_LEVEL` | Logging level | `INFO` |
+| Variable                | Description            | Default                                     |
+| ----------------------- | ---------------------- | ------------------------------------------- |
+| `AWS_REGION`            | AWS region for Bedrock | `us-east-1`                                 |
+| `AWS_ACCESS_KEY_ID`     | AWS access key         | -                                           |
+| `AWS_SECRET_ACCESS_KEY` | AWS secret key         | -                                           |
+| `BEDROCK_MODEL_ID`      | Bedrock model ID       | `anthropic.claude-3-5-sonnet-20241022-v2:0` |
+| `LOG_LEVEL`             | Logging level          | `INFO`                                      |
 
 ### AWS Permissions Required
 
 The ECS task role needs:
+
 - `bedrock:InvokeModel` - For AI agent calls
 - CloudWatch Logs permissions for logging
 - Secrets Manager access (if using)
@@ -316,6 +322,7 @@ uv run pytest tests/test_code_scout.py
 ### Code Style
 
 This project follows:
+
 - PEP 8 style guide
 - Type hints for all functions
 - Comprehensive docstrings
@@ -338,12 +345,14 @@ uv run mypy src/
 ### Common Issues
 
 **1. Bedrock Access Denied**
+
 ```bash
 # Check Bedrock access
 aws bedrock list-foundation-models --region us-east-1
 ```
 
 **2. Docker Build Issues**
+
 ```bash
 # Clean build
 docker system prune -a
@@ -351,12 +360,14 @@ docker-compose build --no-cache
 ```
 
 **3. MCP Server Connection Issues**
+
 ```bash
 # Check server logs
 docker-compose logs -f legacy-code-modernizer
 ```
 
 **4. Import Errors in Development**
+
 ```bash
 # Ensure virtual environment is activated
 source .venv/bin/activate
@@ -368,11 +379,13 @@ uv sync
 ## Performance Considerations
 
 ### Code Scout (Fast Agent)
+
 - **Typical Response**: < 1 second for single file analysis
 - **Large Repositories**: 5-30 seconds for full scan
 - **Optimization**: Results are cached per directory
 
 ### Refactoring Crew (Slow Agent)
+
 - **Typical Response**: 10-60 seconds per operation
 - **Full Workflow**: 2-5 minutes (analysis + refactoring)
 - **Factors**: Code complexity, Bedrock API latency
@@ -389,6 +402,7 @@ uv sync
 ## Cost Estimation
 
 ### AWS Services
+
 - **Fargate**: ~$30-50/month (1 vCPU, 2GB RAM, always on)
 - **Bedrock**: ~$3-15/1M tokens (Claude 3.5 Sonnet)
 - **ECR**: ~$0.10/GB/month
@@ -411,6 +425,7 @@ MIT License - See LICENSE file for details
 ## Support
 
 For issues and questions:
+
 - GitHub Issues: [Create an issue](https://github.com/yourusername/legacy-code-modernizer/issues)
 - Documentation: [Wiki](https://github.com/yourusername/legacy-code-modernizer/wiki)
 

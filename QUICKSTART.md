@@ -204,17 +204,18 @@ make test-integration
 
 ## 📊 Agent Comparison
 
-| Feature | Code Scout | Refactoring Crew |
-|---------|------------|------------------|
-| **Speed** | < 1 second | 10-60 seconds |
-| **Type** | Synchronous | Asynchronous |
-| **AI** | No | Yes (Bedrock) |
-| **Use Case** | Impact analysis | Code modernization |
+| Feature         | Code Scout              | Refactoring Crew       |
+| --------------- | ----------------------- | ---------------------- |
+| **Speed**       | < 1 second              | 10-60 seconds          |
+| **Type**        | Synchronous             | Asynchronous           |
+| **AI**          | No                      | Yes (Bedrock)          |
+| **Use Case**    | Impact analysis         | Code modernization     |
 | **MCP Wrapper** | `is_long_running=False` | `is_long_running=True` |
 
 ## 💰 Cost Estimate
 
 **AWS Monthly Costs:**
+
 - Fargate: $30-50 (1 vCPU, 2GB, always-on)
 - Bedrock: $3-15 per 1M tokens
 - ECR: ~$0.10/GB

@@ -7,12 +7,14 @@ A complete MCP-based system for modernizing legacy code using AI agents deployed
 ### 🎯 What Was Built
 
 1. **Code Scout (Fast Agent)** - Synchronous Python symbol scanner
+
    - AST-based code analysis
    - Impact analysis & dependency graphing
    - Git blame integration
    - Grep search capabilities
 
 2. **Refactoring Crew (Slow Agent)** - Asynchronous AI-powered refactoring
+
    - Architect Agent (planning)
    - Coder Agent (implementation)
    - AWS Bedrock integration (Claude 3.5 Sonnet)
@@ -20,6 +22,7 @@ A complete MCP-based system for modernizing legacy code using AI agents deployed
    - Architectural reviews
 
 3. **MCP Server** - Exposes both agents via Model Context Protocol
+
    - Fast tools: `@wrapper.ingest(is_long_running=False)`
    - Slow tools: `@wrapper.ingest(is_long_running=True)`
    - 11 total tools available
@@ -87,6 +90,7 @@ legacy-code-modernizer/
 ### 🚀 Key Features Implemented
 
 #### Code Scout (Fast)
+
 - ✅ AST-based Python parsing
 - ✅ Symbol usage tracking
 - ✅ Impact analysis
@@ -96,6 +100,7 @@ legacy-code-modernizer/
 - ✅ Dataclass-based results
 
 #### Refactoring Crew (Slow)
+
 - ✅ AWS Bedrock integration
 - ✅ Two-agent architecture (Architect + Coder)
 - ✅ Refactoring plan generation
@@ -105,6 +110,7 @@ legacy-code-modernizer/
 - ✅ Async execution support
 
 #### MCP Server
+
 - ✅ 6 fast tools (Code Scout)
 - ✅ 5 slow tools (Refactoring Crew)
 - ✅ Proper async handling
@@ -113,6 +119,7 @@ legacy-code-modernizer/
 - ✅ STDIO protocol support
 
 #### Infrastructure
+
 - ✅ Dockerfile with health checks
 - ✅ Docker Compose for local dev
 - ✅ Fargate task definition
@@ -121,6 +128,7 @@ legacy-code-modernizer/
 - ✅ AWS setup guide
 
 #### Developer Experience
+
 - ✅ Makefile with 20+ commands
 - ✅ Comprehensive README
 - ✅ Quick start guide
@@ -132,6 +140,7 @@ legacy-code-modernizer/
 ### 📝 Documentation
 
 1. **README.md** (400+ lines)
+
    - Architecture overview
    - Complete feature list
    - Installation instructions
@@ -141,12 +150,14 @@ legacy-code-modernizer/
    - Cost estimates
 
 2. **QUICKSTART.md**
+
    - 5-minute setup
    - Common commands
    - Quick examples
    - Troubleshooting
 
 3. **aws/setup-guide.md**
+
    - Step-by-step AWS setup
    - IAM role creation
    - VPC configuration
@@ -187,6 +198,7 @@ legacy-code-modernizer/
 ### 💻 Developer Tools
 
 **Makefile Commands:**
+
 - `make install` - Install dependencies
 - `make test` - Run tests
 - `make test-cov` - Coverage report
@@ -199,6 +211,7 @@ legacy-code-modernizer/
 ### 🎓 Usage Examples
 
 **Code Scout:**
+
 ```python
 scout = CodeScout("/path/to/repo")
 scout.scan_directory()
@@ -206,6 +219,7 @@ impact = scout.analyze_impact("function_name")
 ```
 
 **Refactoring Crew:**
+
 ```python
 crew = RefactoringCrew()
 result = crew.full_refactoring_workflow(
@@ -215,6 +229,7 @@ result = crew.full_refactoring_workflow(
 ```
 
 **MCP Server:**
+
 ```bash
 make run-server  # Exposes 11 tools via MCP
 ```
