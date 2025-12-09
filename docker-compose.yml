@@ -1,0 +1,25 @@
+# Docker Compose for local development and testing
+version: '3.8'
+
+services:
+  legacy-code-modernizer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: legacy-code-modernizer
+    environment:
+      - AWS_REGION=${AWS_REGION:-us-east-1}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    volumes:
+      # Mount code for development
+      - ./src:/app/src
+      # Mount local repos for analysis
+      - ${LOCAL_REPO_PATH:-./sample_code}:/workspace:ro
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    stdin_open: true
+    tty: true
