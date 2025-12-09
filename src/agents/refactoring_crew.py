@@ -1,15 +1,21 @@
 """
 Refactoring Crew Agent - Slow Asynchronous Refactoring
 Uses CrewAI with AWS Bedrock for complex refactoring tasks.
+Supports both local files and GitHub URLs.
 """
 
 import os
-from typing import Optional, Dict, Any
+import sys
+from typing import Optional, Dict, Any, Union
 import json
 from crewai import Agent, Task, Crew, Process
 from crewai.tools import BaseTool
 from pydantic import BaseModel, Field
 import boto3
+
+# Import GitHub helper
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from utils.github_helper import GitHubHelper, is_github_url, get_github_content
 
 
 class BedrockLLM:
@@ -98,18 +104,22 @@ class RefactoringCrew:
     """
     Slow agent for complex refactoring tasks.
     Uses CrewAI with an Architect and Coder agent.
+    Supports both local code and GitHub URLs.
     """
     
     def __init__(
         self,
         bedrock_model_id: str = "anthropic.claude-3-5-sonnet-20241022-v2:0",
-        aws_region: str = "us-east-1"
+        aws_region: str = "us-east-1",
+        github_token: Optional[str] = None
     ):
         self.bedrock_llm = BedrockLLM(
             model_id=bedrock_model_id,
             region=aws_region
         )
         self.code_analysis_tool = CodeAnalysisTool()
+        self.github_token = github_token or os.getenv("GITHUB_TOKEN")
+        self.github_helper = GitHubHelper(self.github_token)
         
         # Initialize agents
         self.architect_agent = self._create_architect()
@@ -145,18 +155,41 @@ class RefactoringCrew:
             llm=self.bedrock_llm
         )
     
+    def _get_code_content(self, code_or_url: str) -> tuple[str, str]:
+        """
+        Get code content from string or GitHub URL.
+        
+        Args:
+            code_or_url: Code string or GitHub URL
+            
+        Returns:
+            Tuple of (code_content, source_info)
+        """
+        if is_github_url(code_or_url):
+            content, source_type = get_github_content(code_or_url, self.github_token)
+            if content:
+                return content, f"GitHub: {code_or_url}"
+            else:
+                raise ValueError(f"Failed to fetch content from GitHub URL: {code_or_url}")
+        else:
+            return code_or_url, "Direct input"
+    
     def analyze_and_plan(self, code: str, context: Optional[str] = None) -> str:
         """
         Analyze code and create a refactoring plan.
         
         Args:
-            code: The legacy code to analyze
+            code: The legacy code to analyze OR a GitHub URL to a Python file
             context: Additional context about the code
             
         Returns:
             Bullet-point refactoring plan
         """
+        # Handle GitHub URL or direct code
+        code_content, source_info = self._get_code_content(code)
+        
         context_info = f"\n\nAdditional Context:\n{context}" if context else ""
+        context_info += f"\n\nSource: {source_info}"
         
         task = Task(
             description=f"""Analyze the following legacy code and create a detailed 
@@ -172,7 +205,7 @@ class RefactoringCrew:
             
             Code to analyze:
             ```python
-            {code}
+            {code_content}
             ```
             {context_info}
             
@@ -197,18 +230,21 @@ class RefactoringCrew:
         Refactor code based on a plan.
         
         Args:
-            code: The original code to refactor
+            code: The original code to refactor OR a GitHub URL
             plan: The refactoring plan from the architect
             
         Returns:
             Refactored code
         """
+        # Handle GitHub URL or direct code
+        code_content, source_info = self._get_code_content(code)
+        
         task = Task(
             description=f"""Implement the following refactoring plan for the given code.
             
-            Original Code:
+            Original Code (Source: {source_info}):
             ```python
-            {code}
+            {code_content}
             ```
             
             Refactoring Plan:
@@ -248,12 +284,14 @@ class RefactoringCrew:
         Execute complete refactoring workflow: analyze, plan, and refactor.
         
         Args:
-            code: The legacy code to refactor
+            code: The legacy code to refactor OR a GitHub URL
             context: Additional context about the code
             
         Returns:
             Dictionary with plan and refactored code
         """
+        # Get actual code content if GitHub URL
+        code_content, source_info = self._get_code_content(code)
         print("Phase 1: Analyzing and creating refactoring plan...")
         plan = self.analyze_and_plan(code, context)
         
@@ -261,7 +299,8 @@ class RefactoringCrew:
         refactored_code = self.refactor_code(code, plan)
         
         return {
-            "original_code": code,
+            "original_code": code_content,
+            "source": source_info,
             "refactoring_plan": plan,
             "refactored_code": refactored_code
         }

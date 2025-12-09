@@ -1,9 +1,11 @@
 # Legacy Code Modernizer
 
-A powerful system for modernizing risky legacy functions using AI agents exposed via Model Context Protocol (MCP). The system features two specialized agents:
+A powerful system for modernizing risky legacy functions using AI agents exposed via Model Context Protocol (MCP). The system features two specialized agents with **GitHub integration** for direct repository and file analysis.
 
 1. **Code Scout (Fast Agent)** - Synchronous symbol scanner for impact analysis
 2. **Refactoring Crew (Slow Agent)** - Asynchronous AI-powered refactoring using CrewAI and AWS Bedrock
+
+**🆕 GitHub Integration**: Both agents now support GitHub URLs! Analyze repositories or files directly without cloning manually.
 
 ## Architecture
 
@@ -23,6 +25,7 @@ A powerful system for modernizing risky legacy functions using AI agents exposed
 │  │ • Impact analysis│      │ • CrewAI             │   │
 │  │ • Dependency     │      │ • Test generation    │   │
 │  │   graphing       │      │ • Architecture review│   │
+│  │ • GitHub URLs    │      │ • GitHub URLs        │   │
 │  └──────────────────┘      └──────────────────────┘   │
 │                                                         │
 └─────────────────────────────────────────────────────────┘
@@ -37,6 +40,7 @@ A powerful system for modernizing risky legacy functions using AI agents exposed
 - **Dependency Graphing**: Build and visualize dependencies
 - **Grep Search**: Fast text-based searches across codebases
 - **Git Blame**: Track code ownership and history
+- **GitHub Support**: Analyze repositories directly via URL
 - **MCP Wrapper**: `@wrapper.ingest(is_long_running=False)`
 
 ### Refactoring Crew (Slow Agent)
@@ -46,6 +50,7 @@ A powerful system for modernizing risky legacy functions using AI agents exposed
 - **AI-Powered**: Uses AWS Bedrock (Claude 3.5 Sonnet)
 - **Test Generation**: Automatic pytest test suite creation
 - **Architectural Review**: High-level codebase assessment
+- **GitHub Support**: Refactor files directly from GitHub URLs
 - **MCP Wrapper**: `@wrapper.ingest(is_long_running=True)`
 
 ## Prerequisites
@@ -103,12 +108,42 @@ python -m src.mcp_server.server
 
 ## Usage Examples
 
+### 🆕 GitHub Integration Examples
+
+Both agents now support GitHub URLs directly!
+
+```python
+from src.agents.code_scout import CodeScout
+from src.agents.refactoring_crew import RefactoringCrew
+
+# Analyze a GitHub repository
+scout = CodeScout("https://github.com/pallets/flask")
+scout.scan_directory("*.py")
+impact = scout.analyze_impact("Flask")
+
+# Analyze a single GitHub file
+scout.analyze_github_file("https://github.com/owner/repo/blob/main/file.py")
+
+# Refactor code from GitHub
+crew = RefactoringCrew()
+result = crew.full_refactoring_workflow(
+    code="https://github.com/owner/repo/blob/main/legacy.py",
+    context="Legacy authentication module"
+)
+
+# Private repositories (requires token)
+scout = CodeScout(
+    "https://github.com/your-org/private-repo",
+    github_token="ghp_your_token"
+)
+```
+
 ### Code Scout Examples
 
 ```python
 from src.agents.code_scout import CodeScout
 
-# Initialize scout
+# Local directory
 scout = CodeScout("/path/to/your/repo")
 
 # Scan directory

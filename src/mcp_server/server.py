@@ -83,18 +83,22 @@ class LegacyCodeModernizerServer:
             return [
                 Tool(
                     name="scan_directory",
-                    description="Scan a directory for Python files and analyze symbol usages. Fast synchronous operation.",
+                    description="Scan a directory or GitHub repository for Python files and analyze symbol usages. Fast synchronous operation. Supports both local paths and GitHub repository URLs.",
                     inputSchema={
                         "type": "object",
                         "properties": {
                             "root_directory": {
                                 "type": "string",
-                                "description": "Path to the root directory to scan"
+                                "description": "Path to the root directory to scan OR GitHub repository URL (e.g., https://github.com/owner/repo)"
                             },
                             "pattern": {
                                 "type": "string",
                                 "description": "File pattern to match (default: *.py)",
                                 "default": "*.py"
+                            },
+                            "github_token": {
+                                "type": "string",
+                                "description": "GitHub personal access token for private repositories (optional)"
                             }
                         },
                         "required": ["root_directory"]
@@ -198,13 +202,13 @@ class LegacyCodeModernizerServer:
                 # Slow tools (Refactoring Crew)
                 Tool(
                     name="analyze_and_plan",
-                    description="Analyze code and create a refactoring plan using AI. Slow asynchronous operation.",
+                    description="Analyze code and create a refactoring plan using AI. Slow asynchronous operation. Supports GitHub URLs to fetch files directly.",
                     inputSchema={
                         "type": "object",
                         "properties": {
                             "code": {
                                 "type": "string",
-                                "description": "The legacy code to analyze"
+                                "description": "The legacy code to analyze OR a GitHub file URL (e.g., https://github.com/owner/repo/blob/main/file.py)"
                             },
                             "context": {
                                 "type": "string",
@@ -214,6 +218,10 @@ class LegacyCodeModernizerServer:
                                 "type": "string",
                                 "description": "AWS region for Bedrock (default: us-east-1)",
                                 "default": "us-east-1"
+                            },
+                            "github_token": {
+                                "type": "string",
+                                "description": "GitHub personal access token for private repositories (optional)"
                             }
                         },
                         "required": ["code"]
@@ -221,13 +229,13 @@ class LegacyCodeModernizerServer:
                 ),
                 Tool(
                     name="refactor_code",
-                    description="Refactor code based on a plan using AI. Slow asynchronous operation.",
+                    description="Refactor code based on a plan using AI. Slow asynchronous operation. Supports GitHub URLs.",
                     inputSchema={
                         "type": "object",
                         "properties": {
                             "code": {
                                 "type": "string",
-                                "description": "The original code to refactor"
+                                "description": "The original code to refactor OR a GitHub file URL"
                             },
                             "plan": {
                                 "type": "string",
@@ -237,6 +245,10 @@ class LegacyCodeModernizerServer:
                                 "type": "string",
                                 "description": "AWS region for Bedrock (default: us-east-1)",
                                 "default": "us-east-1"
+                            },
+                            "github_token": {
+                                "type": "string",
+                                "description": "GitHub personal access token for private repositories (optional)"
                             }
                         },
                         "required": ["code", "plan"]
@@ -244,13 +256,13 @@ class LegacyCodeModernizerServer:
                 ),
                 Tool(
                     name="full_refactoring_workflow",
-                    description="Execute complete refactoring: analyze, plan, and refactor. Slow asynchronous operation.",
+                    description="Execute complete refactoring: analyze, plan, and refactor. Slow asynchronous operation. Supports GitHub URLs.",
                     inputSchema={
                         "type": "object",
                         "properties": {
                             "code": {
                                 "type": "string",
-                                "description": "The legacy code to refactor"
+                                "description": "The legacy code to refactor OR a GitHub file URL"
                             },
                             "context": {
                                 "type": "string",
@@ -260,6 +272,10 @@ class LegacyCodeModernizerServer:
                                 "type": "string",
                                 "description": "AWS region for Bedrock (default: us-east-1)",
                                 "default": "us-east-1"
+                            },
+                            "github_token": {
+                                "type": "string",
+                                "description": "GitHub personal access token for private repositories (optional)"
                             }
                         },
                         "required": ["code"]
@@ -347,13 +363,14 @@ class LegacyCodeModernizerServer:
     async def _execute_code_scout_tool(self, name: str, arguments: Dict[str, Any]) -> Any:
         """Execute Code Scout tools (fast, synchronous)."""
         root_dir = arguments.get("root_directory")
+        github_token = arguments.get("github_token")
         
         if not root_dir:
             raise ValueError("root_directory is required")
         
-        # Initialize scout if needed
-        if not self.code_scout or self.code_scout.root_directory != root_dir:
-            self.code_scout = CodeScout(root_dir)
+        # Initialize scout if needed (with GitHub token support)
+        if not self.code_scout or str(self.code_scout.original_input) != root_dir:
+            self.code_scout = CodeScout(root_dir, github_token=github_token)
         
         if name == "scan_directory":
             pattern = arguments.get("pattern", "*.py")
@@ -418,10 +435,14 @@ class LegacyCodeModernizerServer:
     async def _execute_refactoring_crew_tool(self, name: str, arguments: Dict[str, Any]) -> Any:
         """Execute Refactoring Crew tools (slow, asynchronous)."""
         aws_region = arguments.get("aws_region", "us-east-1")
+        github_token = arguments.get("github_token")
         
-        # Initialize crew if needed
+        # Initialize crew if needed (with GitHub token support)
         if not self.refactoring_crew:
-            self.refactoring_crew = RefactoringCrew(aws_region=aws_region)
+            self.refactoring_crew = RefactoringCrew(
+                aws_region=aws_region,
+                github_token=github_token
+            )
         
         loop = asyncio.get_event_loop()
         

@@ -1,15 +1,22 @@
 """
 Code Scout Agent - Fast Synchronous Symbol Scanner
-Scans local directories for symbol usages using AST and grep.
+Scans local directories or GitHub repositories for symbol usages using AST and grep.
 """
 
 import ast
 import os
 import subprocess
 from pathlib import Path
-from typing import Dict, List, Optional, Set
+from typing import Dict, List, Optional, Set, Union
 from dataclasses import dataclass, asdict
 import json
+import tempfile
+import shutil
+
+# Import GitHub helper
+import sys
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from utils.github_helper import GitHubHelper, is_github_url
 
 
 @dataclass
@@ -35,11 +42,41 @@ class CodeScout:
     """
     Fast agent for code analysis and symbol tracking.
     Provides impact analysis, dependency graphing, and git blame lookups.
+    Supports both local directories and GitHub repositories.
     """
     
-    def __init__(self, root_directory: str):
-        self.root_directory = Path(root_directory)
+    def __init__(self, root_directory: str, github_token: Optional[str] = None):
+        """
+        Initialize Code Scout.
+        
+        Args:
+            root_directory: Local directory path or GitHub repository URL
+            github_token: GitHub token for private repositories (optional)
+        """
+        self.original_input = root_directory
+        self.is_github = is_github_url(root_directory)
+        self.github_helper = GitHubHelper(github_token) if self.is_github else None
+        self.temp_dir = None
+        
+        if self.is_github:
+            # Clone repository to temp directory
+            self.temp_dir = self.github_helper.clone_repository(root_directory)
+            if self.temp_dir:
+                self.root_directory = Path(self.temp_dir)
+            else:
+                raise ValueError(f"Failed to clone GitHub repository: {root_directory}")
+        else:
+            self.root_directory = Path(root_directory)
+        
         self.symbol_usages: Dict[str, List[SymbolUsage]] = {}
+    
+    def __del__(self):
+        """Cleanup temp directory if created."""
+        if self.temp_dir and os.path.exists(self.temp_dir):
+            try:
+                shutil.rmtree(self.temp_dir)
+            except Exception as e:
+                print(f"Warning: Failed to cleanup temp directory: {e}")
         
     def scan_directory(self, pattern: Optional[str] = "*.py") -> Dict[str, List[SymbolUsage]]:
         """
@@ -78,6 +115,41 @@ class CodeScout:
                 self.symbol_usages[symbol].extend(usages)
         except SyntaxError as e:
             print(f"Syntax error in {file_path}: {e}")
+    
+    def analyze_github_file(self, github_url: str) -> Dict[str, List[SymbolUsage]]:
+        """
+        Analyze a single file from GitHub URL.
+        
+        Args:
+            github_url: GitHub file URL
+            
+        Returns:
+            Dictionary mapping symbols to their usages
+        """
+        if not self.github_helper:
+            self.github_helper = GitHubHelper()
+        
+        result = self.github_helper.fetch_file_content(github_url)
+        if not result:
+            return {}
+        
+        content, filename = result
+        
+        try:
+            tree = ast.parse(content, filename=filename)
+            visitor = SymbolVisitor(github_url, content)
+            visitor.visit(tree)
+            
+            # Merge results
+            for symbol, usages in visitor.symbol_usages.items():
+                if symbol not in self.symbol_usages:
+                    self.symbol_usages[symbol] = []
+                self.symbol_usages[symbol].extend(usages)
+            
+            return visitor.symbol_usages
+        except SyntaxError as e:
+            print(f"Syntax error in {github_url}: {e}")
+            return {}
     
     def find_symbol(self, symbol_name: str) -> List[SymbolUsage]:
         """

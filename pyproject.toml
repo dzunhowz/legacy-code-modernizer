@@ -9,6 +9,8 @@ dependencies = [
     "crewai>=1.7.0",
     "mcp>=1.16.0",
     "pydantic>=2.11.10",
+    "pygithub>=2.8.1",
+    "requests>=2.32.5",
 ]
 
 [dependency-groups]
