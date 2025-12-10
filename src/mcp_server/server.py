@@ -216,8 +216,8 @@ class LegacyCodeModernizerServer:
                             },
                             "aws_region": {
                                 "type": "string",
-                                "description": "AWS region for Bedrock (default: us-east-1)",
-                                "default": "us-east-1"
+                                "description": "AWS region for Bedrock (default: ap-southeast-2)",
+                                "default": "ap-southeast-2"
                             },
                             "github_token": {
                                 "type": "string",
@@ -243,8 +243,8 @@ class LegacyCodeModernizerServer:
                             },
                             "aws_region": {
                                 "type": "string",
-                                "description": "AWS region for Bedrock (default: us-east-1)",
-                                "default": "us-east-1"
+                                "description": "AWS region for Bedrock (default: ap-southeast-2)",
+                                "default": "ap-southeast-2"
                             },
                             "github_token": {
                                 "type": "string",
@@ -270,8 +270,8 @@ class LegacyCodeModernizerServer:
                             },
                             "aws_region": {
                                 "type": "string",
-                                "description": "AWS region for Bedrock (default: us-east-1)",
-                                "default": "us-east-1"
+                                "description": "AWS region for Bedrock (default: ap-southeast-2)",
+                                "default": "ap-southeast-2"
                             },
                             "github_token": {
                                 "type": "string",
@@ -297,8 +297,8 @@ class LegacyCodeModernizerServer:
                             },
                             "aws_region": {
                                 "type": "string",
-                                "description": "AWS region for Bedrock (default: us-east-1)",
-                                "default": "us-east-1"
+                                "description": "AWS region for Bedrock (default: ap-southeast-2)",
+                                "default": "ap-southeast-2"
                             }
                         },
                         "required": ["code", "refactored_code"]
@@ -316,8 +316,8 @@ class LegacyCodeModernizerServer:
                             },
                             "aws_region": {
                                 "type": "string",
-                                "description": "AWS region for Bedrock (default: us-east-1)",
-                                "default": "us-east-1"
+                                "description": "AWS region for Bedrock (default: ap-southeast-2)",
+                                "default": "ap-southeast-2"
                             }
                         },
                         "required": ["codebase_description"]
@@ -434,7 +434,7 @@ class LegacyCodeModernizerServer:
     @mcp_wrapper(MCPWrapperConfig(is_long_running=True))
     async def _execute_refactoring_crew_tool(self, name: str, arguments: Dict[str, Any]) -> Any:
         """Execute Refactoring Crew tools (slow, asynchronous)."""
-        aws_region = arguments.get("aws_region", "us-east-1")
+        aws_region = arguments.get("aws_region", "ap-southeast-2")
         github_token = arguments.get("github_token")
         
         # Initialize crew if needed (with GitHub token support)

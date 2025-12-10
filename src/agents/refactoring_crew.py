@@ -27,7 +27,7 @@ class BedrockLLM:
     def __init__(
         self,
         model_id: str = "anthropic.claude-3-5-sonnet-20241022-v2:0",
-        region: str = "us-east-1"
+        region: str = "ap-southeast-2"
     ):
         self.model_id = model_id
         self.bedrock_runtime = boto3.client(
@@ -110,7 +110,7 @@ class RefactoringCrew:
     def __init__(
         self,
         bedrock_model_id: str = "anthropic.claude-3-5-sonnet-20241022-v2:0",
-        aws_region: str = "us-east-1",
+        aws_region: str = "ap-southeast-2",
         github_token: Optional[str] = None
     ):
         self.bedrock_llm = BedrockLLM(

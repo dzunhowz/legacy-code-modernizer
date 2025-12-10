@@ -103,7 +103,7 @@ The MCP server exposes tools that can be called by any MCP-compatible client.
   "arguments": {
     "code": "def old_function(): ...",
     "context": "Used in high-traffic API",
-    "aws_region": "us-east-1"
+    "aws_region": "ap-southeast-2"
   }
 }
 ```
@@ -116,7 +116,7 @@ The MCP server exposes tools that can be called by any MCP-compatible client.
   "arguments": {
     "code": "def old_function(): ...",
     "plan": "1. Add type hints\n2. Improve error handling...",
-    "aws_region": "us-east-1"
+    "aws_region": "ap-southeast-2"
   }
 }
 ```
@@ -129,7 +129,7 @@ The MCP server exposes tools that can be called by any MCP-compatible client.
   "arguments": {
     "code": "def old_function(): ...",
     "context": "Legacy payment processing",
-    "aws_region": "us-east-1"
+    "aws_region": "ap-southeast-2"
   }
 }
 ```
@@ -142,7 +142,7 @@ The MCP server exposes tools that can be called by any MCP-compatible client.
   "arguments": {
     "code": "def old_function(): ...",
     "refactored_code": "def new_function(): ...",
-    "aws_region": "us-east-1"
+    "aws_region": "ap-southeast-2"
   }
 }
 ```
@@ -154,7 +154,7 @@ The MCP server exposes tools that can be called by any MCP-compatible client.
   "name": "architectural_review",
   "arguments": {
     "codebase_description": "Monolithic Django app with 50k LOC...",
-    "aws_region": "us-east-1"
+    "aws_region": "ap-southeast-2"
   }
 }
 ```
@@ -226,7 +226,7 @@ Add to your Claude Desktop configuration (`claude_desktop_config.json`):
       "command": "uv",
       "args": ["run", "python", "-m", "src.mcp_server.server"],
       "env": {
-        "AWS_REGION": "us-east-1",
+        "AWS_REGION": "ap-southeast-2",
         "AWS_ACCESS_KEY_ID": "your-key",
         "AWS_SECRET_ACCESS_KEY": "your-secret"
       }

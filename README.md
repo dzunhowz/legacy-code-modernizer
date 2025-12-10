@@ -172,7 +172,7 @@ from src.agents.refactoring_crew import RefactoringCrew
 # Initialize crew with Bedrock
 crew = RefactoringCrew(
     bedrock_model_id="anthropic.claude-3-5-sonnet-20241022-v2:0",
-    aws_region="us-east-1"
+    aws_region="ap-southeast-2"
 )
 
 legacy_code = """
@@ -280,7 +280,7 @@ aws ecs update-service \
 
 | Variable                | Description            | Default                                     |
 | ----------------------- | ---------------------- | ------------------------------------------- |
-| `AWS_REGION`            | AWS region for Bedrock | `us-east-1`                                 |
+| `AWS_REGION`            | AWS region for Bedrock | `ap-southeast-2`                            |
 | `AWS_ACCESS_KEY_ID`     | AWS access key         | -                                           |
 | `AWS_SECRET_ACCESS_KEY` | AWS secret key         | -                                           |
 | `BEDROCK_MODEL_ID`      | Bedrock model ID       | `anthropic.claude-3-5-sonnet-20241022-v2:0` |
@@ -300,7 +300,7 @@ Ensure your AWS account has access to Claude 3.5 Sonnet in Bedrock:
 
 ```bash
 aws bedrock list-foundation-models \
-  --region us-east-1 \
+  --region ap-southeast-2 \
   --query 'modelSummaries[?contains(modelId, `claude-3-5-sonnet`)]'
 ```
 
@@ -383,7 +383,7 @@ uv run mypy src/
 
 ```bash
 # Check Bedrock access
-aws bedrock list-foundation-models --region us-east-1
+aws bedrock list-foundation-models --region ap-southeast-2
 ```
 
 **2. Docker Build Issues**

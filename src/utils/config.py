@@ -10,7 +10,7 @@ class Config:
     """Application configuration."""
     
     # AWS Configuration
-    aws_region: str = os.getenv("AWS_REGION", "us-east-1")
+    aws_region: str = os.getenv("AWS_REGION", "ap-southeast-2")
     aws_access_key_id: Optional[str] = os.getenv("AWS_ACCESS_KEY_ID")
     aws_secret_access_key: Optional[str] = os.getenv("AWS_SECRET_ACCESS_KEY")
     aws_session_token: Optional[str] = os.getenv("AWS_SESSION_TOKEN")

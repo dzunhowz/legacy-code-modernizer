@@ -244,7 +244,7 @@ uv sync
 
 ```bash
 # Check access
-aws bedrock list-foundation-models --region us-east-1
+aws bedrock list-foundation-models --region ap-southeast-2
 
 # Request access in AWS Console → Bedrock → Model access
 ```

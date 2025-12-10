@@ -37,7 +37,7 @@ def main():
     print("Initializing Refactoring Crew with AWS Bedrock...")
     crew = RefactoringCrew(
         bedrock_model_id="anthropic.claude-3-5-sonnet-20241022-v2:0",
-        aws_region="us-east-1"
+        aws_region="ap-southeast-2"
     )
     
     # Example 1: Full refactoring workflow

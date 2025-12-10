@@ -24,7 +24,7 @@ def mock_bedrock_client():
 def test_bedrock_llm_initialization():
     """Test Bedrock LLM initialization."""
     with patch('boto3.client'):
-        llm = BedrockLLM(model_id="test-model", region="us-east-1")
+        llm = BedrockLLM(model_id="test-model", region="ap-southeast-2")
         assert llm.model_id == "test-model"
 
 

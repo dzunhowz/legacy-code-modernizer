@@ -52,7 +52,7 @@ def example_refactoring_crew_with_github():
     # Initialize crew (requires AWS Bedrock access)
     crew = RefactoringCrew(
         bedrock_model_id="anthropic.claude-3-5-sonnet-20241022-v2:0",
-        aws_region="us-east-1",
+        aws_region="ap-southeast-2",
         github_token=os.getenv("GITHUB_TOKEN")  # Optional for public repos
     )
     

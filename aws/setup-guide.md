@@ -89,7 +89,7 @@ aws iam attach-role-policy \
 ```bash
 # List available Bedrock models
 aws bedrock list-foundation-models \
-  --region us-east-1 \
+  --region ap-southeast-2 \
   --query 'modelSummaries[?contains(modelId, `claude`)].{ID:modelId,Name:modelName}' \
   --output table
 
@@ -114,14 +114,14 @@ VPC_ID=$(aws ec2 create-vpc \
 SUBNET1_ID=$(aws ec2 create-subnet \
   --vpc-id $VPC_ID \
   --cidr-block 10.0.1.0/24 \
-  --availability-zone us-east-1a \
+  --availability-zone ap-southeast-2a \
   --query 'Subnet.SubnetId' \
   --output text)
 
 SUBNET2_ID=$(aws ec2 create-subnet \
   --vpc-id $VPC_ID \
   --cidr-block 10.0.2.0/24 \
-  --availability-zone us-east-1b \
+  --availability-zone ap-southeast-2b \
   --query 'Subnet.SubnetId' \
   --output text)
 
@@ -172,7 +172,7 @@ aws ec2 authorize-security-group-egress \
 ```bash
 aws logs create-log-group \
   --log-group-name /ecs/legacy-code-modernizer \
-  --region us-east-1
+  --region ap-southeast-2
 ```
 
 ## Step 5: Create Secrets Manager Secret (Optional)
@@ -187,7 +187,7 @@ aws secretsmanager create-secret \
     "AWS_ACCESS_KEY_ID": "your-access-key",
     "AWS_SECRET_ACCESS_KEY": "your-secret-key"
   }' \
-  --region us-east-1
+  --region ap-southeast-2
 ```
 
 ## Step 6: Create ECS Cluster
@@ -195,7 +195,7 @@ aws secretsmanager create-secret \
 ```bash
 aws ecs create-cluster \
   --cluster-name legacy-code-modernizer-cluster \
-  --region us-east-1
+  --region ap-southeast-2
 ```
 
 ## Step 7: Create ECR Repository
@@ -203,7 +203,7 @@ aws ecs create-cluster \
 ```bash
 aws ecr create-repository \
   --repository-name legacy-code-modernizer \
-  --region us-east-1
+  --region ap-southeast-2
 ```
 
 ## Step 8: Deploy Application
@@ -220,7 +220,7 @@ Now you can use the deployment script:
 # Get the latest task definition ARN
 TASK_DEF_ARN=$(aws ecs describe-task-definition \
   --task-definition legacy-code-modernizer \
-  --region us-east-1 \
+  --region ap-southeast-2 \
   --query 'taskDefinition.taskDefinitionArn' \
   --output text)
 
@@ -236,7 +236,7 @@ aws ecs create-service \
     securityGroups=[$SG_ID],
     assignPublicIp=ENABLED
   }" \
-  --region us-east-1
+  --region ap-southeast-2
 ```
 
 ## Verify Deployment
@@ -246,7 +246,7 @@ aws ecs create-service \
 aws ecs describe-services \
   --cluster legacy-code-modernizer-cluster \
   --services legacy-code-modernizer-service \
-  --region us-east-1
+  --region ap-southeast-2
 
 # View logs
 aws logs tail /ecs/legacy-code-modernizer --follow
@@ -262,23 +262,23 @@ aws ecs update-service \
   --cluster legacy-code-modernizer-cluster \
   --service legacy-code-modernizer-service \
   --desired-count 0 \
-  --region us-east-1
+  --region ap-southeast-2
 
 aws ecs delete-service \
   --cluster legacy-code-modernizer-cluster \
   --service legacy-code-modernizer-service \
-  --region us-east-1
+  --region ap-southeast-2
 
 # Delete cluster
 aws ecs delete-cluster \
   --cluster legacy-code-modernizer-cluster \
-  --region us-east-1
+  --region ap-southeast-2
 
 # Delete ECR repository
 aws ecr delete-repository \
   --repository-name legacy-code-modernizer \
   --force \
-  --region us-east-1
+  --region ap-southeast-2
 
 # Delete VPC resources (if created)
 # ... (security groups, subnets, igw, vpc)
@@ -286,7 +286,7 @@ aws ecr delete-repository \
 # Delete log group
 aws logs delete-log-group \
   --log-group-name /ecs/legacy-code-modernizer \
-  --region us-east-1
+  --region ap-southeast-2
 ```
 
 ## Cost Optimization Tips

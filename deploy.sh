@@ -4,7 +4,7 @@
 set -e
 
 # Configuration
-AWS_REGION=${AWS_REGION:-us-east-1}
+AWS_REGION=${AWS_REGION:-ap-southeast-2}
 ECR_REPOSITORY_NAME="legacy-code-modernizer"
 ECS_CLUSTER_NAME="legacy-code-modernizer-cluster"
 ECS_SERVICE_NAME="legacy-code-modernizer-service"
@@ -77,13 +77,12 @@ docker push $ECR_REPOSITORY_URI:latest
 
 # Create or update task definition
 echo_info "Updating ECS task definition..."
-TASK_DEFINITION=$(cat fargate-task-definition.json | \
-    sed "s/\${ECR_REPOSITORY_URI}/$ECR_REPOSITORY_URI/g" | \
-    sed "s/\${AWS_ACCOUNT_ID}/$AWS_ACCOUNT_ID/g")
+cat fargate-task-definition.json | \
+    sed "s|\${ECR_REPOSITORY_URI}|$ECR_REPOSITORY_URI|g" | \
+    sed "s|\${AWS_ACCOUNT_ID}|$AWS_ACCOUNT_ID|g" > /tmp/task-definition.json
 
-TASK_DEFINITION_ARN=$(echo $TASK_DEFINITION | \
-    aws ecs register-task-definition \
-        --cli-input-json file:///dev/stdin \
+TASK_DEFINITION_ARN=$(aws ecs register-task-definition \
+        --cli-input-json file:///tmp/task-definition.json \
         --region $AWS_REGION \
         --query 'taskDefinition.taskDefinitionArn' \
         --output text)

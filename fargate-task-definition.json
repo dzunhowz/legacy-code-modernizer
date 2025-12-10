@@ -12,7 +12,7 @@
       "environment": [
         {
           "name": "AWS_REGION",
-          "value": "us-east-1"
+          "value": "ap-southeast-2"
         },
         {
           "name": "LOG_LEVEL",
@@ -22,11 +22,11 @@
       "secrets": [
         {
           "name": "AWS_ACCESS_KEY_ID",
-          "valueFrom": "arn:aws:secretsmanager:us-east-1:${AWS_ACCOUNT_ID}:secret:legacy-code-modernizer/aws-credentials:AWS_ACCESS_KEY_ID::"
+          "valueFrom": "arn:aws:secretsmanager:ap-southeast-2:${AWS_ACCOUNT_ID}:secret:legacy-code-modernizer/aws-credentials:AWS_ACCESS_KEY_ID::"
         },
         {
           "name": "AWS_SECRET_ACCESS_KEY",
-          "valueFrom": "arn:aws:secretsmanager:us-east-1:${AWS_ACCOUNT_ID}:secret:legacy-code-modernizer/aws-credentials:AWS_SECRET_ACCESS_KEY::"
+          "valueFrom": "arn:aws:secretsmanager:ap-southeast-2:${AWS_ACCOUNT_ID}:secret:legacy-code-modernizer/aws-credentials:AWS_SECRET_ACCESS_KEY::"
         }
       ],
       "portMappings": [
@@ -39,7 +39,7 @@
         "logDriver": "awslogs",
         "options": {
           "awslogs-group": "/ecs/legacy-code-modernizer",
-          "awslogs-region": "us-east-1",
+          "awslogs-region": "ap-southeast-2",
           "awslogs-stream-prefix": "ecs"
         }
       },
