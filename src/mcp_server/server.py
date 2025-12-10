@@ -50,7 +50,11 @@ def mcp_wrapper(config: MCPWrapperConfig):
                 return await loop.run_in_executor(None, func, *args, **kwargs)
             else:
                 # Run synchronously for fast tasks
-                return func(*args, **kwargs)
+                # Check if func is a coroutine function and await it
+                result = func(*args, **kwargs)
+                if asyncio.iscoroutine(result):
+                    return await result
+                return result
         
         # Attach metadata
         async_wrapper._mcp_config = config
@@ -361,16 +365,30 @@ class LegacyCodeModernizerServer:
     
     @mcp_wrapper(MCPWrapperConfig(is_long_running=False))
     async def _execute_code_scout_tool(self, name: str, arguments: Dict[str, Any]) -> Any:
-        """Execute Code Scout tools (fast, synchronous)."""
+        """Execute Code Scout tools (fast for local, async for GitHub URLs)."""
         root_dir = arguments.get("root_directory")
         github_token = arguments.get("github_token")
         
         if not root_dir:
             raise ValueError("root_directory is required")
         
-        # Initialize scout if needed (with GitHub token support)
-        if not self.code_scout or str(self.code_scout.original_input) != root_dir:
-            self.code_scout = CodeScout(root_dir, github_token=github_token)
+        # Check if it's a GitHub URL - if so, run initialization in thread pool
+        from utils.github_helper import is_github_url
+        
+        if is_github_url(root_dir):
+            # Run GitHub clone in thread pool to avoid blocking
+            loop = asyncio.get_event_loop()
+            
+            # Initialize scout in thread pool (blocking operation)
+            if not self.code_scout or str(self.code_scout.original_input) != root_dir:
+                self.code_scout = await loop.run_in_executor(
+                    None, 
+                    lambda: CodeScout(root_dir, github_token=github_token)
+                )
+        else:
+            # Local directory - initialize directly (fast)
+            if not self.code_scout or str(self.code_scout.original_input) != root_dir:
+                self.code_scout = CodeScout(root_dir, github_token=github_token)
         
         if name == "scan_directory":
             pattern = arguments.get("pattern", "*.py")
@@ -388,7 +406,15 @@ class LegacyCodeModernizerServer:
             
             # Ensure we have scanned first
             if not self.code_scout.symbol_usages:
-                self.code_scout.scan_directory()
+                # Run scan in thread pool if GitHub URL
+                if is_github_url(root_dir):
+                    loop = asyncio.get_event_loop()
+                    await loop.run_in_executor(
+                        None,
+                        self.code_scout.scan_directory
+                    )
+                else:
+                    self.code_scout.scan_directory()
             
             result = self.code_scout.find_symbol(symbol_name)
             return [asdict(usage) for usage in result]
@@ -400,7 +426,15 @@ class LegacyCodeModernizerServer:
             
             # Ensure we have scanned first
             if not self.code_scout.symbol_usages:
-                self.code_scout.scan_directory()
+                # Run scan in thread pool if GitHub URL
+                if is_github_url(root_dir):
+                    loop = asyncio.get_event_loop()
+                    await loop.run_in_executor(
+                        None,
+                        self.code_scout.scan_directory
+                    )
+                else:
+                    self.code_scout.scan_directory()
             
             return self.code_scout.analyze_impact(symbol_name)
         
@@ -423,7 +457,15 @@ class LegacyCodeModernizerServer:
         elif name == "build_dependency_graph":
             # Ensure we have scanned first
             if not self.code_scout.symbol_usages:
-                self.code_scout.scan_directory()
+                # Run scan in thread pool if GitHub URL
+                if is_github_url(root_dir):
+                    loop = asyncio.get_event_loop()
+                    await loop.run_in_executor(
+                        None,
+                        self.code_scout.scan_directory
+                    )
+                else:
+                    self.code_scout.scan_directory()
             
             graph = self.code_scout.build_dependency_graph()
             return {

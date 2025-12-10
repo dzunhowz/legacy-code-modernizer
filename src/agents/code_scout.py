@@ -13,10 +13,11 @@ import json
 import tempfile
 import shutil
 
-# Import GitHub helper
+# Import GitHub helper and cache
 import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from utils.github_helper import GitHubHelper, is_github_url
+from utils.github_cache import get_github_cache
 
 
 @dataclass
@@ -45,34 +46,52 @@ class CodeScout:
     Supports both local directories and GitHub repositories.
     """
     
-    def __init__(self, root_directory: str, github_token: Optional[str] = None):
+    def __init__(self, root_directory: str, github_token: Optional[str] = None, use_cache: bool = True):
         """
         Initialize Code Scout.
         
         Args:
             root_directory: Local directory path or GitHub repository URL
             github_token: GitHub token for private repositories (optional)
+            use_cache: Use GitHub repository cache (recommended for Fargate)
         """
         self.original_input = root_directory
         self.is_github = is_github_url(root_directory)
         self.github_helper = GitHubHelper(github_token) if self.is_github else None
         self.temp_dir = None
+        self.owns_temp_dir = False  # Track if we created the temp dir
         
         if self.is_github:
-            # Clone repository to temp directory
-            self.temp_dir = self.github_helper.clone_repository(root_directory)
-            if self.temp_dir:
-                self.root_directory = Path(self.temp_dir)
+            if use_cache:
+                # Use cache (recommended for Fargate/production)
+                cache = get_github_cache()
+                cached_path = cache.get_or_clone(
+                    root_directory,
+                    github_token=github_token,
+                    shallow=True
+                )
+                if cached_path:
+                    self.root_directory = Path(cached_path)
+                    self.temp_dir = None  # Cache owns the directory
+                    self.owns_temp_dir = False
+                else:
+                    raise ValueError(f"Failed to clone/cache GitHub repository: {root_directory}")
             else:
-                raise ValueError(f"Failed to clone GitHub repository: {root_directory}")
+                # Direct clone without cache (original behavior)
+                self.temp_dir = self.github_helper.clone_repository(root_directory)
+                if self.temp_dir:
+                    self.root_directory = Path(self.temp_dir)
+                    self.owns_temp_dir = True
+                else:
+                    raise ValueError(f"Failed to clone GitHub repository: {root_directory}")
         else:
             self.root_directory = Path(root_directory)
         
         self.symbol_usages: Dict[str, List[SymbolUsage]] = {}
     
     def __del__(self):
-        """Cleanup temp directory if created."""
-        if self.temp_dir and os.path.exists(self.temp_dir):
+        """Cleanup temp directory if we created it."""
+        if self.owns_temp_dir and self.temp_dir and os.path.exists(self.temp_dir):
             try:
                 shutil.rmtree(self.temp_dir)
             except Exception as e:
