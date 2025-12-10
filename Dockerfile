@@ -34,5 +34,5 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD python -c "import sys; sys.exit(0)"
 
-# Run the MCP server
-CMD ["uv", "run", "python", "-m", "src.mcp_server.server"]
+# Run the HTTP wrapper for MCP server
+CMD ["uv", "run", "uvicorn", "src.mcp_server.http_server:app", "--host", "0.0.0.0", "--port", "8080"]
