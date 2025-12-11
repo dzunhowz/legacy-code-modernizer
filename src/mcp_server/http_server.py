@@ -35,12 +35,17 @@ code_scout: Optional[CodeScout] = None
 refactoring_crew: Optional[RefactoringCrew] = None
 
 
-def get_code_scout() -> CodeScout:
-    """Get or initialize CodeScout agent."""
+def get_code_scout(root_directory: str, github_token: Optional[str] = None) -> CodeScout:
+    """Get or initialize CodeScout agent for a specific root directory.
+
+    The CodeScout constructor requires a `root_directory`; initialize a
+    new instance when none exists or when the requested root differs from
+    the existing one. Pass through `github_token` for private repo access.
+    """
     global code_scout
-    if code_scout is None:
-        logger.info("Initializing CodeScout agent...")
-        code_scout = CodeScout()
+    if code_scout is None or str(getattr(code_scout, 'original_input', None)) != str(root_directory):
+        logger.info(f"Initializing CodeScout agent for: {root_directory}")
+        code_scout = CodeScout(root_directory, github_token=github_token)
     return code_scout
 
 
@@ -104,12 +109,10 @@ async def scan_directory(request: ScanDirectoryRequest):
     """Scan a directory or GitHub repository for Python files."""
     try:
         logger.info(f"Scanning directory: {request.root_directory}")
-        scout = get_code_scout()
-        
+        scout = get_code_scout(request.root_directory, request.github_token)
+
         result = scout.scan_directory(
-            root_directory=request.root_directory,
-            pattern=request.pattern,
-            github_token=request.github_token
+            pattern=request.pattern
         )
         
         return {"success": True, "data": result}
@@ -123,14 +126,9 @@ async def find_usages(request: FindUsagesRequest):
     """Find usages of a symbol across the codebase."""
     try:
         logger.info(f"Finding usages of {request.symbol_name}")
-        scout = get_code_scout()
-        
-        result = scout.find_usages(
-            root_directory=request.root_directory,
-            symbol_name=request.symbol_name,
-            symbol_type=request.symbol_type,
-            github_token=request.github_token
-        )
+        scout = get_code_scout(request.root_directory, request.github_token)
+
+        result = scout.find_symbol(request.symbol_name)
         
         return {"success": True, "data": result}
     except Exception as e:
