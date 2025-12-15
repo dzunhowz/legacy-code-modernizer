@@ -540,6 +540,59 @@ uv sync
 
 **Typical monthly cost**: $50-100 for moderate usage
 
+## Chatbot Integration (LLM flows)
+
+This project can be wired into a chatbot in two common ways: an HTTP microservice (easy) or MCP stdio (tool-enabled LLM flows).
+
+- HTTP microservice (recommended for most chatbots): run the FastAPI server and call endpoints from your chatbot backend. Example using `requests`:
+
+```python
+import requests
+
+def find_usages(root_dir, symbol):
+  r = requests.post(
+    "http://localhost:8080/api/find-usages",
+    json={"root_directory": root_dir, "symbol_name": symbol},
+    timeout=30,
+  )
+  r.raise_for_status()
+  return r.json()
+
+# Example chatbot handler (pseudo-code)
+def handle_user_message(user_text):
+  # 1) Parse user intent (e.g., user asked "Where is foo used?")
+  # 2) Call the MCP HTTP endpoint
+  data = find_usages("/path/to/repo", "foo")
+
+  # 3) Build a reply combining the tool output and LLM if desired
+  tool_summary = data.get("data")
+  reply = f"I found {len(tool_summary)} usages of 'foo'. Here's a summary: ..."
+  return reply
+```
+
+- MCP stdio (LLM tool-enabled): run the stdio MCP server and let an LLM client call tools directly (use when the LLM should orchestrate tools). Reuse `examples/mcp_client_stdio_example.py` or `examples/mcp_client_interactive.py`:
+
+```python
+# Pseudo-snippet using mcp client session
+from mcp import ClientSession
+
+async def call_tool_example(session):
+  # The MCP client can call server tools as part of an LLM tool flow
+  resp = await session.call_tool("find_symbol", arguments={
+    "root_directory": "/path/to/repo",
+    "symbol_name": "foo",
+  })
+  # Server returns natural language or JSON text
+  text = resp.content[0].text
+  return text
+```
+
+Quick tips:
+
+- Start with the HTTP approach for simplicity; it's easy to plug into any chatbot framework (Rasa, Botpress, FastAPI, etc.).
+- Use MCP stdio when your LLM orchestrator needs first-class tool calls (LLM-as-controller). See `examples/mcp_client_interactive.py` for an interactive demo.
+- For long-running refactors, call refactoring endpoints and stream progress to the user or notify when complete.
+
 ## Contributing
 
 1. Fork the repository
