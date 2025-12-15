@@ -1,11 +1,16 @@
 # Legacy Code Modernizer
 
-A powerful system for modernizing risky legacy functions using AI agents exposed via Model Context Protocol (MCP). The system features two specialized agents with **GitHub integration** for direct repository and file analysis.
+A powerful system for modernizing risky legacy functions using AI agents exposed via Model Context Protocol (MCP). The system features two specialized agents with **GitHub integration** and **natural language summaries** powered by LangChain + AWS Bedrock.
 
 1. **Code Scout (Fast Agent)** - Synchronous symbol scanner for impact analysis
 2. **Refactoring Crew (Slow Agent)** - Asynchronous AI-powered refactoring using CrewAI and AWS Bedrock
+3. **Natural Language Summaries** - Converts JSON results to human-readable insights
 
-**🆕 GitHub Integration**: Both agents now support GitHub URLs! Analyze repositories or files directly without cloning manually.
+**🆕 New Features**:
+
+- ✨ **LangChain Integration**: JSON responses automatically converted to natural language
+- 🔗 **GitHub Integration**: Analyze repositories or files directly without cloning manually
+- 🤖 **AI Summaries**: Get instant insights like "Found 15 usages across 8 files"
 
 ## Architecture
 
@@ -52,6 +57,52 @@ A powerful system for modernizing risky legacy functions using AI agents exposed
 - **Architectural Review**: High-level codebase assessment
 - **GitHub Support**: Refactor files directly from GitHub URLs
 - **MCP Wrapper**: `@wrapper.ingest(is_long_running=True)`
+
+### Natural Language Summaries (New!)
+
+- **LangChain Integration**: Clean, maintainable AI integration
+- **AWS Bedrock**: Powered by Claude 3.5 Sonnet
+- **Auto-Conversion**: JSON results → Plain English insights
+- **Toggle On/Off**: Enable/disable summaries anytime
+- **Cost Efficient**: ~$0.01 per summary
+- **Works with All Tools**: scan, find, grep, graph
+
+**Example:**
+
+```
+JSON: {"symbol": "process_data", "occurrences": 15, "files": 3}
+↓
+Natural Language: "Found 15 usages of 'process_data' across 3 files.
+Primary usage in main.py (8 calls). Consider adding type hints."
+```
+
+### 🆕 MCP Server Natural Language Responses
+
+**All responses from the MCP server are automatically formatted as natural language!** This works with any MCP client.
+
+```
+Tool Call: find_symbol("validate_input")
+
+Response:
+Found 12 usages of 'validate_input' across 3 file(s)
+
+Key locations:
+  • src/validators.py: line 45
+  • src/api.py: line 123
+  • src/handlers.py: line 67
+  ... and 9 more
+
+Detailed Results:
+[ Full JSON details follow ]
+```
+
+- **Server-Side Processing**: No client changes needed
+- **All Tools Supported**: scan, find, grep, graph, refactor, etc.
+- **Smart Formatting**: Bullet points, summaries, line numbers
+- **Optional Bedrock**: Uses Claude for complex analyses
+- **Fallback**: Simple formatting for quick responses
+
+See [MCP Server Natural Language Guide](docs/md_files/MCP_SERVER_NATURAL_LANGUAGE.md) for complete details.
 
 ## Prerequisites
 
@@ -202,6 +253,50 @@ tests = crew.generate_tests(
     refactored_code=output['refactored_code']
 )
 ```
+
+### Natural Language Summaries
+
+**Quick Start:**
+
+```bash
+# Install LangChain dependencies
+uv pip install langchain langchain-aws
+
+# Test Bedrock connection
+python examples/test_bedrock_summary.py
+
+# Run interactive client with summaries
+python examples/mcp_client_interactive.py
+```
+
+**Interactive Usage:**
+
+```
+mcp> scan
+Directory path: ./src
+File pattern: *.py
+
+[Scanning...]
+
+==============================================================
+🤖 AI Summary (AWS Bedrock):
+==============================================================
+Scanned 45 Python files totaling 3,250 lines. Found 127
+functions across 23 classes. Key areas include agent
+implementations (15 files) and utilities (8 files). Consider
+refactoring larger functions exceeding 100 lines.
+==============================================================
+```
+
+**Toggle Summaries:**
+
+```
+mcp> summary       # Toggle on/off
+mcp> scan         # Run with summary
+mcp> find         # Works with all commands
+```
+
+See [LangChain Summary Guide](docs/md_files/LANGCHAIN_SUMMARY_README.md) for details.
 
 ### MCP Server Usage
 

@@ -1,6 +1,7 @@
 """
 MCP Server Wrapper
 Exposes both Code Scout (fast) and Refactoring Crew (slow) agents via MCP protocol.
+Includes natural language formatting of responses using LangChain + AWS Bedrock.
 """
 
 import asyncio
@@ -24,6 +25,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from agents.code_scout import CodeScout
 from agents.refactoring_crew import RefactoringCrew
+from utils.natural_language_formatter import NaturalLanguageFormatter
 
 
 @dataclass
@@ -67,12 +69,14 @@ def mcp_wrapper(config: MCPWrapperConfig):
 class LegacyCodeModernizerServer:
     """
     MCP Server exposing Code Scout and Refactoring Crew agents.
+    Responses are automatically formatted as natural language using LangChain + AWS Bedrock.
     """
     
     def __init__(self):
         self.server = Server("legacy-code-modernizer")
         self.code_scout: Optional[CodeScout] = None
         self.refactoring_crew: Optional[RefactoringCrew] = None
+        self.nl_formatter = NaturalLanguageFormatter()
         
         # Register tools
         self._register_tools()
@@ -334,17 +338,26 @@ class LegacyCodeModernizerServer:
         
         @self.server.call_tool()
         async def call_tool(name: str, arguments: Any) -> list[TextContent]:
-            """Handle tool calls."""
+            """Handle tool calls with natural language formatting."""
             try:
                 result = await self._execute_tool(name, arguments)
+                
+                # Extract root_directory from arguments for context
+                root_directory = arguments.get("root_directory", "")
+                symbol_name = arguments.get("symbol_name", "")
+                
+                # Format result as natural language
+                formatted_response = self.nl_formatter.format_response(name, result, root_directory, symbol_name)
+                
                 return [TextContent(
                     type="text",
-                    text=json.dumps(result, indent=2)
+                    text=formatted_response
                 )]
             except Exception as e:
+                error_response = {"error": str(e)}
                 return [TextContent(
                     type="text",
-                    text=json.dumps({"error": str(e)}, indent=2)
+                    text=json.dumps(error_response, indent=2)
                 )]
     
     async def _execute_tool(self, name: str, arguments: Dict[str, Any]) -> Any:

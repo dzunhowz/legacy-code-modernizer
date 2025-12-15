@@ -5,9 +5,99 @@ Provides an interactive shell to test MCP server tools.
 
 import asyncio
 import json
+import os
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 from contextlib import AsyncExitStack
+from langchain_aws import ChatBedrock
+from langchain_core.messages import HumanMessage
+
+
+class BedrockSummarizer:
+    """Summarizes MCP tool results using AWS Bedrock via LangChain."""
+    
+    def __init__(
+        self,
+        model_id: str = "anthropic.claude-3-5-sonnet-20241022-v2:0",
+        region: str = "ap-southeast-2"
+    ):
+        self.model_id = model_id
+        self.region = region
+        self.llm = None
+        self._initialized = False
+    
+    def _initialize(self):
+        """Initialize LangChain Bedrock client lazily."""
+        if not self._initialized:
+            try:
+                self.llm = ChatBedrock(
+                    model_id=self.model_id,
+                    region_name=self.region,
+                    model_kwargs={
+                        "max_tokens": 500,
+                        "temperature": 0.3,  # Lower temperature for more focused summaries
+                    }
+                )
+                self._initialized = True
+                print("✓ AWS Bedrock summarization enabled\n")
+            except Exception as e:
+                print(f"⚠️  Failed to initialize Bedrock: {e}")
+                print("   Continuing without summarization...\n")
+    
+    def summarize(self, tool_name: str, result_data: dict) -> str:
+        """Convert JSON result to natural language using LangChain + Bedrock.
+        
+        Args:
+            tool_name: Name of the tool that was executed
+            result_data: The JSON result from the tool
+            
+        Returns:
+            Human-readable natural language summary
+        """
+        if not self._initialized:
+            self._initialize()
+        
+        if not self._initialized:
+            return "Summary unavailable (Bedrock not initialized)"
+        
+        try:
+            # Create a prompt for natural language conversion
+            prompt = self._create_summary_prompt(tool_name, result_data)
+            
+            # Use LangChain to invoke Bedrock
+            message = HumanMessage(content=prompt)
+            response = self.llm.invoke([message])
+            
+            # Extract the natural language summary
+            summary = response.content.strip()
+            
+            return summary
+            
+        except Exception as e:
+            return f"Error generating summary: {e}"
+    
+    def _create_summary_prompt(self, tool_name: str, result_data: dict) -> str:
+        """Create a prompt for summarizing tool results."""
+        result_json = json.dumps(result_data, indent=2)
+        
+        # Truncate if too long
+        if len(result_json) > 8000:
+            result_json = result_json[:8000] + "\n... (truncated)"
+        
+        prompt = f"""You are analyzing the results of a code analysis tool.
+
+Tool: {tool_name}
+Result:
+{result_json}
+
+Provide a concise, human-readable summary that highlights:
+1. Key statistics (e.g., "Found X usages", "Analyzed Y files")
+2. Important findings or patterns
+3. Any notable insights or recommendations
+
+Keep the summary under 5 sentences. Focus on actionable information."""
+        
+        return prompt
 
 
 class InteractiveMCPClient:
@@ -16,6 +106,8 @@ class InteractiveMCPClient:
     def __init__(self):
         self.session = None
         self.tools = []
+        self.summarizer = BedrockSummarizer()
+        self.enable_summary = os.getenv("ENABLE_SUMMARY", "true").lower() == "true"
     
     async def connect(self):
         """Connect to the MCP server."""
@@ -90,13 +182,38 @@ class InteractiveMCPClient:
             
             # Parse and display result
             response_text = result.content[0].text
-            response_data = json.loads(response_text)
+            parsed_json = None
+            response_data = None
+            try:
+                parsed_json = json.loads(response_text)
+            except json.JSONDecodeError:
+                parsed_json = None
             
-            print("\n" + "="*60)
-            print("Result:")
-            print("="*60)
-            print(json.dumps(response_data, indent=2))
-            print("="*60 + "\n")
+            # If server returns natural language (non-JSON), just print it
+            if parsed_json is None:
+                print("\n" + "="*60)
+                print("Result (natural language from server):")
+                print("="*60)
+                print(response_text)
+                print("="*60 + "\n")
+                response_data = response_text
+                # Skip client-side summarization because server already formatted it
+            else:
+                print("\n" + "="*60)
+                print("Result:")
+                print("="*60)
+                print(json.dumps(parsed_json, indent=2))
+                print("="*60 + "\n")
+                
+                # Generate AI summary if enabled and we have raw JSON
+                if self.enable_summary:
+                    print("\n" + "="*60)
+                    print("🤖 AI Summary (AWS Bedrock):")
+                    print("="*60)
+                    summary = self.summarizer.summarize(tool_name, parsed_json)
+                    print(summary)
+                    print("="*60 + "\n")
+                response_data = parsed_json
             
             return response_data
             
@@ -125,6 +242,7 @@ class InteractiveMCPClient:
         print("  find    - Find symbol usages")
         print("  grep    - Grep search")
         print("  graph   - Build dependency graph")
+        print("  summary - Toggle AI summary (currently: " + ("ON" if self.enable_summary else "OFF") + ")")
         print("  help    - Show GitHub URL usage tips")
         print("  quit    - Exit")
         print("="*60 + "\n")
@@ -202,6 +320,11 @@ class InteractiveMCPClient:
                     await self.call_tool("build_dependency_graph", {
                         "root_directory": path
                     })
+                
+                elif command == "summary":
+                    self.enable_summary = not self.enable_summary
+                    status = "enabled" if self.enable_summary else "disabled"
+                    print(f"\n🤖 AI summary {status}\n")
                 
                 elif command == "help":
                     print("\n" + "="*60)
