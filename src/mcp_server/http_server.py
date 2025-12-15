@@ -70,6 +70,8 @@ class FindUsagesRequest(BaseModel):
     symbol_name: str
     symbol_type: str = "function"
     github_token: Optional[str] = None
+    # Optional file pattern for an initial scan if needed
+    pattern: str = "*.py"
 
 
 class AnalyzeRefactoringRequest(BaseModel):
@@ -127,6 +129,10 @@ async def find_usages(request: FindUsagesRequest):
     try:
         logger.info(f"Finding usages of {request.symbol_name}")
         scout = get_code_scout(request.root_directory, request.github_token)
+        # Ensure repository is scanned at least once (auto-clone handled in CodeScout)
+        if not getattr(scout, 'symbol_usages', {}):
+            logger.info("No scan results found in memory; running initial scan...")
+            scout.scan_directory(pattern=request.pattern or "*.py")
 
         result = scout.find_symbol(request.symbol_name)
         
