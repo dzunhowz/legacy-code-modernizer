@@ -9,6 +9,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import Optional, Dict, Any
 import logging
+from dataclasses import asdict
 
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
@@ -91,6 +92,34 @@ class GenerateTestsRequest(BaseModel):
 
 class ArchitecturalReviewRequest(BaseModel):
     codebase_description: str
+
+
+# Additional Code Scout request models
+class AnalyzeImpactRequest(BaseModel):
+    root_directory: str
+    symbol_name: str
+    github_token: Optional[str] = None
+    pattern: str = "*.py"
+
+
+class BuildDependencyGraphRequest(BaseModel):
+    root_directory: str
+    github_token: Optional[str] = None
+    pattern: str = "*.py"
+
+
+class GrepSearchRequest(BaseModel):
+    root_directory: str
+    pattern: str
+    file_pattern: str = "*.py"
+    github_token: Optional[str] = None
+
+
+class GitBlameRequest(BaseModel):
+    root_directory: str
+    file_path: str
+    line_number: int
+    github_token: Optional[str] = None
 
 
 # Health check endpoint
@@ -197,6 +226,66 @@ async def generate_tests(request: GenerateTestsRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# Additional Code Scout endpoints
+@app.post("/api/analyze-impact")
+async def analyze_impact(request: AnalyzeImpactRequest):
+    """Analyze the impact of changing a symbol; auto-scan if needed."""
+    try:
+        logger.info(f"Analyzing impact for symbol: {request.symbol_name}")
+        scout = get_code_scout(request.root_directory, request.github_token)
+        if not getattr(scout, 'symbol_usages', {}):
+            logger.info("No scan results found in memory; running initial scan...")
+            scout.scan_directory(pattern=request.pattern or "*.py")
+        result = scout.analyze_impact(request.symbol_name)
+        return {"success": True, "data": result}
+    except Exception as e:
+        logger.error(f"Error analyzing impact: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/build-dependency-graph")
+async def build_dependency_graph(request: BuildDependencyGraphRequest):
+    """Build dependency graph; auto-scan if needed."""
+    try:
+        logger.info("Building dependency graph")
+        scout = get_code_scout(request.root_directory, request.github_token)
+        if not getattr(scout, 'symbol_usages', {}):
+            logger.info("No scan results found in memory; running initial scan...")
+            scout.scan_directory(pattern=request.pattern or "*.py")
+        graph = scout.build_dependency_graph()
+        serializable = {symbol: asdict(node) for symbol, node in graph.items()}
+        return {"success": True, "data": serializable}
+    except Exception as e:
+        logger.error(f"Error building dependency graph: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/grep-search")
+async def grep_search(request: GrepSearchRequest):
+    """Run a fast grep search over the repo (no scan needed)."""
+    try:
+        logger.info(f"Grep searching pattern: {request.pattern}")
+        scout = get_code_scout(request.root_directory, request.github_token)
+        result = scout.grep_search(request.pattern, request.file_pattern)
+        return {"success": True, "data": result}
+    except Exception as e:
+        logger.error(f"Error in grep search: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/git-blame")
+async def git_blame(request: GitBlameRequest):
+    """Return git blame info for a file/line in the repo."""
+    try:
+        logger.info(f"Git blame for {request.file_path}:{request.line_number}")
+        scout = get_code_scout(request.root_directory, request.github_token)
+        result = scout.git_blame(request.file_path, request.line_number)
+        return {"success": True, "data": result}
+    except Exception as e:
+        logger.error(f"Error in git blame: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.post("/api/architectural-review")
 async def architectural_review(request: ArchitecturalReviewRequest):
     """Perform architectural review of codebase."""
@@ -231,6 +320,30 @@ async def list_tools():
                 "category": "code-scout",
                 "description": "Find usages of a symbol across codebase",
                 "endpoint": "/api/find-usages"
+            },
+            {
+                "name": "analyze_impact",
+                "category": "code-scout",
+                "description": "Analyze impact of a symbol across the codebase",
+                "endpoint": "/api/analyze-impact"
+            },
+            {
+                "name": "build_dependency_graph",
+                "category": "code-scout",
+                "description": "Build symbol dependency graph",
+                "endpoint": "/api/build-dependency-graph"
+            },
+            {
+                "name": "grep_search",
+                "category": "code-scout",
+                "description": "Run grep across repository",
+                "endpoint": "/api/grep-search"
+            },
+            {
+                "name": "git_blame",
+                "category": "code-scout",
+                "description": "Get git blame for a line",
+                "endpoint": "/api/git-blame"
             },
             {
                 "name": "analyze_refactoring",
